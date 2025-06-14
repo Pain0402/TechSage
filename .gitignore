@@ -1,0 +1,22 @@
+# === BACKEND ===
+backend/node_modules/
+backend/.env
+backend/npm-debug.log
+backend/yarn-debug.log
+backend/yarn-error.log
+backend/package-lock.json
+
+# === FRONTEND ===
+frontend/TechSage-frontend/node_modules/
+frontend/TechSage-frontend/dist/
+frontend/TechSage-frontend/.env
+frontend/TechSage-frontend/.vscode/
+frontend/TechSage-frontend/package-lock.json
+frontend/TechSage-frontend/npm-debug.log
+
+# === COMMON ===
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*  # bất kỳ file .env nào như .env.local, .env.production
