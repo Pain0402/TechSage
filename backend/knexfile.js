@@ -1,6 +1,4 @@
-// backend/knexfile.js
-require("dotenv").config(); // Đảm bảo dòng này ở trên cùng
-
+require("dotenv").config();
 module.exports = {
   development: {
     client: "pg",

@@ -1,0 +1,45 @@
+/* src/assets/global.css */
+
+/* Import font nếu chưa có ở đâu khác */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Định nghĩa lại các biến màu sắc ở đây nếu bạn muốn chúng là global */
+    --primary-blue: #007bff;
+    --light-blue: #e0efff;
+    --deep-blue: #25d0ff;
+    --text-dark: #333;
+    --text-light: #666;
+    --border-color: #e0e0e0;
+    --background-light: #f8f9fa;
+    --card-background: #ffffff;
+    --hover-light: #f0f0f0;
+    --shadow-light: rgba(0, 0, 0, 0.05);
+    --shadow-medium: rgba(0, 0, 0, 0.1);
+
+    /* Spacing */
+    --spacing-xs: 8px;
+    --spacing-sm: 16px;
+    --spacing-md: 24px;
+    --spacing-lg: 32px;
+    --spacing-xl: 48px;
+
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    font-family: 'Inter', sans-serif; 
+    color: var(--text-dark); 
+    min-height: 100vh; 
+
+}
+
+body {
+    background: linear-gradient(to bottom, var(--light-blue), var(--deep-blue));
+}

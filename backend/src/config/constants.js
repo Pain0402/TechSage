@@ -5,5 +5,5 @@ module.exports = {
     DOCUMENTS: "documents",
     EMBEDDINGS: "embeddings",
   },
-  VECTOR_DIMENSIONS: 768, // Kích thước vector của Google Gemini
+  VECTOR_DIMENSIONS: 768,
 };

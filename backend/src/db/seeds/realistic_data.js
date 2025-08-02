@@ -1,103 +1,101 @@
 const bcrypt = require("bcryptjs");
+const { TABLE_NAMES } = require("../../config/constants");
 
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
 exports.seed = async function (knex) {
-  // Xoá dữ liệu cũ
-  await knex("documents").del();
-  await knex("projects").del();
-  await knex("users").del();
+  // Xoá dữ liệu cũ theo thứ tự ngược lại để tránh lỗi khóa ngoại
+  await knex(TABLE_NAMES.DOCUMENTS).del();
+  await knex(TABLE_NAMES.PROJECTS).del();
+  await knex(TABLE_NAMES.USERS).del();
 
-  // 1. Danh sách người dùng
+  // === 1. TẠO NGƯỜI DÙNG ===
   const rawUsers = [
-    { email: "alice@techsage.dev", password: "alicepass" },
-    { email: "bob@techsage.dev", password: "bobpass" },
-    { email: "carol@techsage.dev", password: "carolpass" },
-    { email: "david@techsage.dev", password: "davidpass" },
-    { email: "eve@techsage.dev", password: "evepass" },
+    { email: "alice@techsage.dev", password: "alicepassword" },
+    { email: "bob@techsage.dev", password: "bobpassword" },
+    { email: "carol@techsage.dev", password: "carolpassword" },
   ];
 
-  // Hash mật khẩu và chèn user
-  const users = [];
-  for (const u of rawUsers) {
-    const password_hash = await bcrypt.hash(u.password, 10);
-    const [user] = await knex("users")
-      .insert({ email: u.email, password_hash })
-      .returning("*");
-    users.push(user);
-  }
+  const usersToInsert = await Promise.all(
+    rawUsers.map(async (u) => ({
+      email: u.email,
+      password_hash: await bcrypt.hash(u.password, 10),
+    }))
+  );
 
-  // 2. Projects
-  const projects = [];
+  // *** TỐI ƯU: Sử dụng bulk insert
+  const users = await knex(TABLE_NAMES.USERS)
+    .insert(usersToInsert)
+    .returning("*");
+  console.log(`Đã tạo ${users.length} người dùng.`);
 
-  const rawProjects = [
+  // === 2. TẠO DỰ ÁN ===
+  const projectsToInsert = [
     {
-      userIndex: 0,
-      name: "AI Research Notes",
-      description: "Ghi chú về NLP và LLM.",
+      user_id: users[0].id,
+      name: "Nghiên cứu AI",
+      description: "Ghi chú về NLP và các mô hình LLM.",
     },
     {
-      userIndex: 1,
-      name: "DevOps Handbook",
-      description: "Tài liệu nội bộ về CI/CD.",
+      user_id: users[1].id,
+      name: "Sổ tay DevOps",
+      description: "Tài liệu nội bộ về CI/CD và Kubernetes.",
     },
     {
-      userIndex: 1,
-      name: "Monitoring System",
-      description: "Phân tích log & metrics.",
+      user_id: users[1].id,
+      name: "Hệ thống giám sát",
+      description: "Phân tích log và metrics từ Prometheus.",
     },
     {
-      userIndex: 2,
-      name: "Frontend Architecture",
-      description: "Tối ưu React & Tailwind.",
-    },
-    {
-      userIndex: 3,
-      name: "Database Design",
-      description: "Tối ưu hoá truy vấn PostgreSQL.",
-    },
-    {
-      userIndex: 4,
-      name: "RAG-based Chatbot",
-      description: "Tài liệu xây dựng chatbot tài liệu.",
+      user_id: users[2].id,
+      name: "Kiến trúc Frontend",
+      description: "Tối ưu hiệu năng React và Vue.",
     },
   ];
 
-  for (const p of rawProjects) {
-    const [project] = await knex("projects")
-      .insert({
-        user_id: users[p.userIndex].id,
-        name: p.name,
-        description: p.description,
-      })
-      .returning("*");
-    projects.push(project);
-  }
+  const projects = await knex(TABLE_NAMES.PROJECTS)
+    .insert(projectsToInsert)
+    .returning("*");
+  console.log(`Đã tạo ${projects.length} dự án.`);
 
-  // 3. Documents
-  const documentsData = [
-    { projectIndex: 0, file_name: "llm_paper.pdf", file_type: "pdf" },
-    { projectIndex: 1, file_name: "cicd_guide.md", file_type: "md" },
-    { projectIndex: 2, file_name: "logs.txt", file_type: "txt" },
+  // === 3. TẠO TÀI LIỆU ===
+  const documentsToInsert = [
     {
-      projectIndex: 4,
-      file_name: "postgresql_best_practices.pdf",
-      file_type: "pdf",
+      project_id: projects[0].id,
+      file_name: "attention_is_all_you_need.pdf",
+      file_path: "uploads/attention_is_all_you_need.pdf",
+      file_type: "application/pdf",
+      status: "completed",
     },
     {
-      projectIndex: 5,
-      file_name: "chatbot_architecture.pdf",
-      file_type: "pdf",
+      project_id: projects[1].id,
+      file_name: "docker_cheatsheet.md",
+      file_path: "uploads/docker_cheatsheet.md",
+      file_type: "text/markdown",
+      status: "completed",
     },
-    { projectIndex: 5, file_name: "embedding_strategy.txt", file_type: "txt" },
+    {
+      project_id: projects[2].id,
+      file_name: "api_gateway_logs.txt",
+      file_path: "uploads/api_gateway_logs.txt",
+      file_type: "text/plain",
+      status: "completed",
+    },
+    {
+      project_id: projects[3].id,
+      file_name: "virtual_dom_explained.pdf",
+      file_path: "uploads/virtual_dom_explained.pdf",
+      file_type: "application/pdf",
+      status: "completed",
+    },
   ];
 
-  for (const doc of documentsData) {
-    await knex("documents").insert({
-      project_id: projects[doc.projectIndex].id,
-      file_name: doc.file_name,
-      file_type: doc.file_type,
-      status: "ready",
-    });
-  }
+  const documents = await knex(TABLE_NAMES.DOCUMENTS)
+    .insert(documentsToInsert)
+    .returning("*");
+  console.log(`Đã tạo ${documents.length} tài liệu.`);
 
   console.log("✅ Dữ liệu thực tế đã được tạo thành công.");
 };
