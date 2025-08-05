@@ -1,27 +1,76 @@
 <script setup>
 import { ref } from 'vue';
+
+// Services & Composables
 import apiService from '@/services/api.service';
+import { useToasts } from '@/composables/useToasts';
+import { usePolling } from '@/composables/usePolling'; // Import composable polling
+
+// Components
 import DocumentUploader from '@/components/upload/DocumentUploader.vue';
 import ConfirmationModal from '@/components/base/ConfirmationModal.vue';
-// *** CẬP NHẬT: Import composable toast ***
-import { useToasts } from '@/composables/useToasts';
 
+// Props & Emits
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
   documents: { type: Array, required: true },
   projectId: { type: String, required: true },
 });
 
-const emit = defineEmits(['document-uploaded', 'request-summary', 'request-quiz', 'document-deleted']);
+const emit = defineEmits([
+  'document-uploaded',
+  'request-summary',
+  'request-quiz',
+  'document-deleted',
+  'document-updated' // Thêm event mới để thông báo khi trạng thái được cập nhật
+]);
 
+// Composables
 const { addToast } = useToasts();
+
+// Component State
 const isUploaderVisible = ref(false);
 const isDeleteModalVisible = ref(false);
 const documentToDelete = ref(null);
 
+// --- Polling Logic ---
+/**
+ * Hàm hành động cho poller, gọi API để lấy trạng thái mới nhất của tài liệu.
+ */
+const checkDocumentStatus = async (docId) => {
+  try {
+    // Lưu ý: Cần thêm hàm getDocument vào api.service.js
+    const response = await apiService.getDocument(docId);
+    // Nếu trạng thái không còn là 'processing', trả về dữ liệu để dừng polling
+    if (response.data && response.data.status !== 'processing') {
+      return { data: response.data };
+    }
+    // Trả về null để tiếp tục polling
+    return null;
+  } catch (error) {
+    console.error(`Polling error for document ${docId}:`, error);
+    // Tiếp tục polling ngay cả khi có lỗi mạng tạm thời
+    return null;
+  }
+};
+
+// --- Methods ---
+
 const handleUploadSuccess = (newDocument) => {
   emit('document-uploaded', newDocument);
-  addToast('Tài liệu đã được tải lên và đang được xử lý.', 'success');
+  addToast('Document has been uploaded and is being processed.', 'success');
+
+  // Bắt đầu polling để theo dõi trạng thái của tài liệu mới
+  const { start } = usePolling(
+    () => checkDocumentStatus(newDocument.id),
+    (completedDocument) => {
+      // Khi polling hoàn tất, phát sự kiện lên component cha để cập nhật trạng thái
+      emit('document-updated', completedDocument);
+      addToast(`Document '${completedDocument.file_name}' has been processed.`, 'success');
+    },
+    5000 // Thăm dò sau mỗi 5 giây
+  );
+  start();
 };
 
 const openDeleteModal = (doc) => {
@@ -36,15 +85,14 @@ const closeDeleteModal = () => {
 
 const confirmDelete = async () => {
   if (!documentToDelete.value) return;
+
   try {
     await apiService.deleteDocument(documentToDelete.value.id);
     emit('document-deleted', documentToDelete.value.id);
-    // *** CẬP NHẬT: Hiển thị thông báo thành công ***
-    addToast(`Đã xóa thành công tài liệu '${documentToDelete.value.file_name}'.`, 'success');
+    addToast(`Successfully deleted document '${documentToDelete.value.file_name}'.`, 'success');
   } catch (error) {
-    console.error("Lỗi khi xóa tài liệu:", error);
-    // *** CẬP NHẬT: Hiển thị thông báo lỗi ***
-    addToast('Xóa tài liệu thất bại. Vui lòng thử lại.', 'danger');
+    console.error("Error deleting document:", error);
+    addToast('Failed to delete document. Please try again.', 'danger');
   } finally {
     closeDeleteModal();
   }
@@ -53,7 +101,7 @@ const confirmDelete = async () => {
 
 <template>
   <div class="document-list-panel d-flex flex-column h-100 p-3">
-    <h5 class="fw-bold text-white mb-3">Tài liệu dự án</h5>
+    <h5 class="fw-bold text-white mb-3">Project Documents</h5>
 
     <div class="mb-3">
       <button @click="isUploaderVisible = true"
@@ -76,13 +124,13 @@ const confirmDelete = async () => {
           <i v-else-if="doc.status === 'failed'" class="bi bi-x-circle-fill text-danger"></i>
         </div>
         <div class="document-actions mt-2">
-          <button @click="emit('request-summary', doc.id)" class="btn btn-sm btn-action" title="Tóm tắt">
+          <button @click="emit('request-summary', doc.id)" class="btn btn-sm btn-action" title="Summarize">
             <i class="bi bi-card-text"></i>
           </button>
-          <button @click="emit('request-quiz', doc.id)" class="btn btn-sm btn-action" title="Tạo Quiz">
+          <button @click="emit('request-quiz', doc.id)" class="btn btn-sm btn-action" title="Generate Quiz">
             <i class="bi bi-patch-question-fill"></i>
           </button>
-          <button @click="openDeleteModal(doc)" class="btn btn-sm btn-action text-danger" title="Xóa">
+          <button @click="openDeleteModal(doc)" class="btn btn-sm btn-action text-danger" title="Delete">
             <i class="bi bi-trash3-fill"></i>
           </button>
         </div>
@@ -93,14 +141,18 @@ const confirmDelete = async () => {
   <DocumentUploader :show="isUploaderVisible" :project-id="projectId" @close="isUploaderVisible = false"
     @upload-success="handleUploadSuccess" />
 
-  <ConfirmationModal :show="isDeleteModalVisible" title="Xác nhận xóa tài liệu"
-    :message="`Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu '${documentToDelete?.file_name}' không? Hành động này không thể hoàn tác.`"
-    confirm-text="Xóa tài liệu" variant="danger" @close="closeDeleteModal" @confirm="confirmDelete" />
+  <ConfirmationModal :show="isDeleteModalVisible" title="Confirm Document Deletion"
+    :message="`Are you sure you want to permanently delete the document '${documentToDelete?.file_name}'? This action cannot be undone.`"
+    confirm-text="Delete Document" variant="danger" @close="closeDeleteModal" @confirm="confirmDelete" />
 </template>
 
 <style scoped>
 .document-list-panel {
   background-color: #2D3748;
+  border-radius: 15px;
+  max-height: 570px;
+  min-height: 570px;
+  transition: transform 0.3s ease-in-out;
 }
 
 .btn-primary {

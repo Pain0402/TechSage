@@ -1,7 +1,11 @@
 <script setup>
+// Vue
 import { ref, watch } from 'vue';
+
+// Services
 import apiService from '@/services/api.service';
 
+// --- Props & Emits ---
 const props = defineProps({
   projectId: {
     type: String,
@@ -15,7 +19,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'upload-success']);
 
-// --- State ---
+// --- Component State ---
 const selectedFile = ref(null);
 const isUploading = ref(false);
 const uploadProgress = ref(0);
@@ -23,7 +27,7 @@ const errorMessage = ref(null);
 const isDragOver = ref(false);
 const modalInstance = ref(null);
 
-// --- Methods ---
+// --- File Handling ---
 const handleFileSelect = (event) => {
   selectFile(event.target.files[0]);
 };
@@ -35,15 +39,15 @@ const handleFileDrop = (event) => {
 
 const selectFile = (file) => {
   if (!file) return;
-  // Có thể thêm kiểm tra định dạng file ở đây
   selectedFile.value = file;
   errorMessage.value = null;
 };
 
 const triggerFileInput = () => {
-  document.getElementById('fileInput').click();
+  document.getElementById('fileInput')?.click();
 };
 
+// --- Core Logic (Đã sửa lỗi) ---
 const uploadFile = async () => {
   if (!selectedFile.value) return;
 
@@ -58,36 +62,44 @@ const uploadFile = async () => {
   try {
     const response = await apiService.uploadDocument(formData, {
       onUploadProgress: (progressEvent) => {
-        uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        if (progressEvent.total) {
+          uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        }
       },
     });
-    // Gửi sự kiện thành công với dữ liệu tài liệu mới
-    emit('upload-success', response.data.document);
-    closeModal();
+
+    // *** SỬA LỖI: Luồng xử lý khi thành công ***
+    isUploading.value = false; // 1. Cập nhật trạng thái loading TRƯỚC
+    emit('upload-success', response.data.document); // 2. Gửi sự kiện thành công
+    closeModal(); // 3. Gọi hàm đóng modal (bây giờ sẽ hoạt động)
+
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Tải file thất bại. Vui lòng thử lại.';
-  } finally {
-    isUploading.value = false;
+    errorMessage.value = error.response?.data?.message || 'File upload failed. Please try again.';
+    isUploading.value = false; // Cập nhật trạng thái loading khi có lỗi
   }
+  // Khối finally không còn cần thiết vì đã xử lý isUploading trong cả try và catch
 };
 
+// --- Modal Management ---
 const closeModal = () => {
+  // Điều kiện này vẫn hữu ích để ngăn người dùng đóng modal bằng các cách khác khi đang upload
   if (isUploading.value) return;
+
   selectedFile.value = null;
   uploadProgress.value = 0;
   errorMessage.value = null;
   emit('close');
 };
 
-// Quản lý hiển thị modal bằng Bootstrap JS
+// Watch for the 'show' prop to manage the Bootstrap modal instance
 watch(() => props.show, (newVal) => {
+  const modalEl = document.getElementById('uploaderModal');
+  if (!modalEl) return;
+
   if (newVal) {
-    const modalEl = document.getElementById('uploaderModal');
-    // Cần import bootstrap vào main.js hoặc dùng CDN
     // eslint-disable-next-line no-undef
     modalInstance.value = new bootstrap.Modal(modalEl);
     modalInstance.value.show();
-    // Lắng nghe sự kiện đóng modal của Bootstrap
     modalEl.addEventListener('hidden.bs.modal', closeModal, { once: true });
   } else {
     if (modalInstance.value) {
@@ -102,45 +114,41 @@ watch(() => props.show, (newVal) => {
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="uploaderModalLabel">Tải lên tài liệu mới</h5>
+          <h5 class="modal-title" id="uploaderModalLabel">Upload New Document</h5>
           <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <!-- Vùng kéo thả -->
           <div class="drop-zone" :class="{ 'drag-over': isDragOver }" @click="triggerFileInput"
             @dragover.prevent="isDragOver = true" @dragleave.prevent="isDragOver = false"
             @drop.prevent="handleFileDrop">
             <i class="bi bi-cloud-arrow-up-fill display-4 text-secondary"></i>
-            <p class="mb-0 mt-2">Kéo và thả file vào đây, hoặc nhấn để chọn file</p>
-            <p class="small text-secondary">Hỗ trợ PDF, TXT, MD...</p>
+            <p class="mb-0 mt-2">Drag and drop a file here, or click to select a file</p>
+            <p class="small text-secondary">Supports PDF, TXT, MD...</p>
             <input type="file" id="fileInput" @change="handleFileSelect" hidden>
           </div>
 
-          <!-- Hiển thị file đã chọn -->
           <div v-if="selectedFile" class="mt-3 selected-file-info">
             <i class="bi bi-file-earmark-text-fill me-2"></i>
             <span>{{ selectedFile.name }}</span>
             <span class="text-secondary ms-2">({{ (selectedFile.size / 1024).toFixed(2) }} KB)</span>
           </div>
 
-          <!-- Thanh tiến trình -->
           <div v-if="isUploading" class="progress mt-3" style="height: 10px;">
             <div class="progress-bar" role="progressbar" :style="{ width: uploadProgress + '%' }"
               :aria-valuenow="uploadProgress" aria-valuemin="0" aria-valuemax="100">
             </div>
           </div>
 
-          <!-- Thông báo lỗi -->
           <div v-if="errorMessage" class="alert alert-danger mt-3 p-2 text-center">
             {{ errorMessage }}
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal" :disabled="isUploading">Hủy</button>
+          <button type="button" class="btn btn-secondary" @click="closeModal" :disabled="isUploading">Cancel</button>
           <button type="button" class="btn btn-primary" @click="uploadFile" :disabled="!selectedFile || isUploading">
             <span v-if="isUploading" class="spinner-border spinner-border-sm me-2" role="status"
               aria-hidden="true"></span>
-            Tải lên
+            Upload
           </button>
         </div>
       </div>

@@ -19,6 +19,34 @@ const verifyProjectOwnership = async (projectId, userId) => {
 };
 
 /**
+ * Lấy thông tin chi tiết của một tài liệu.
+ * @param {string} documentId - ID của tài liệu.
+ * @param {string} userId - ID của người dùng yêu cầu.
+ * @returns {Promise<object>} - Đối tượng tài liệu.
+ */
+const getDocumentById = async (documentId, userId) => {
+  const document = await db(TABLE_NAMES.DOCUMENTS)
+    .where({ id: documentId })
+    .first();
+
+  if (!document) {
+    const error = new Error("Tài liệu không tồn tại.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Kiểm tra xem người dùng có quyền truy cập vào dự án chứa tài liệu này không
+  const isOwner = await verifyProjectOwnership(document.project_id, userId);
+  if (!isOwner) {
+    const error = new Error("Bạn không có quyền truy cập tài liệu này.");
+    error.statusCode = 403; // Forbidden
+    throw error;
+  }
+
+  return document;
+};
+
+/**
  * Xử lý việc tải lên và embedding tài liệu (tác vụ nền).
  * Cập nhật trạng thái và dọn dẹp file tạm sau khi hoàn tất.
  * @param {object} file - Đối tượng file từ multer.
@@ -187,6 +215,7 @@ const deleteDocumentById = async (documentId, userId) => {
 };
 
 module.exports = {
+  getDocumentById,
   createDocument,
   getSummary,
   deleteDocumentById,

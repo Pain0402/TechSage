@@ -1,7 +1,9 @@
 <script setup>
+// Libs
 import { ref, computed, watch } from 'vue';
 import { marked } from 'marked';
 
+// --- Props ---
 const props = defineProps({
   state: {
     type: Object,
@@ -10,10 +12,11 @@ const props = defineProps({
   }
 });
 
-// --- State cho Quiz ---
+// --- Quiz State ---
 const selectedAnswers = ref({});
 const isChecked = ref(false);
 
+// --- Computed Properties ---
 const renderedSummary = computed(() => {
   if (props.state.view === 'summary' && props.state.data) {
     return marked(props.state.data);
@@ -21,9 +24,9 @@ const renderedSummary = computed(() => {
   return '';
 });
 
-// --- Methods cho Quiz ---
+// --- Quiz Methods ---
 const handleOptionSelect = (questionIndex, option) => {
-  if (isChecked.value) return; // Không cho thay đổi khi đã kiểm tra
+  if (isChecked.value) return; // Don't allow changes after checking
   selectedAnswers.value[questionIndex] = option;
 };
 
@@ -55,7 +58,8 @@ const getOptionClass = (question, option, questionIndex) => {
   return {};
 };
 
-// Reset quiz state khi dữ liệu quiz thay đổi (ví dụ: tạo quiz mới)
+// --- Watchers ---
+// Reset quiz state when quiz data changes (e.g., generating a new quiz)
 watch(() => props.state.data, () => {
   if (props.state.view === 'quiz') {
     resetQuiz();
@@ -65,21 +69,19 @@ watch(() => props.state.data, () => {
 </script>
 
 <template>
-
   <div class="context-panel d-flex flex-column p-3 h-100">
-    <!-- Chế độ Idle -->
+
     <div v-if="state.view === 'idle'"
       class="d-flex flex-column justify-content-center align-items-center text-center h-100">
       <i class="bi bi-lightbulb-fill display-4 text-secondary mb-3"></i>
-      <h6 class="text-white">Bảng điều khiển ngữ cảnh</h6>
+      <h6 class="text-white">Context Panel</h6>
       <p class="small text-secondary px-3">
-        Chọn một hành động từ danh sách tài liệu (ví dụ: Tóm tắt) để xem kết quả tại đây.
+        Select an action from the document list (e.g., Summarize) to see the results here.
       </p>
     </div>
 
-    <!-- Chế độ Tóm tắt -->
     <div v-else-if="state.view === 'summary'" class="d-flex flex-column h-100">
-      <h5 class="fw-bold text-white mb-3">Bản tóm tắt tài liệu</h5>
+      <h5 class="fw-bold text-white mb-3">Document Summary</h5>
       <div class="context-content flex-grow-1 overflow-auto p-3 rounded">
         <div v-if="state.isLoading" class="d-flex justify-content-center align-items-center h-100">
           <div class="spinner-border text-primary" role="status"></div>
@@ -89,12 +91,11 @@ watch(() => props.state.data, () => {
       </div>
     </div>
 
-    <!-- Chế độ hiển thị Quiz -->
-    <div v-else-if="state.view === 'quiz'" class="d-flex flex-column h-100">
+    <div v-else-if="state.view === 'quiz'" class="d-flex flex-column h-100 overflow-auto">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold text-white mb-0">Câu hỏi trắc nghiệm</h5>
+        <h5 class="fw-bold text-white mb-0">Multiple Choice Quiz</h5>
         <button v-if="isChecked" @click="resetQuiz" class="btn btn-sm btn-outline-secondary">
-          <i class="bi bi-arrow-clockwise"></i> Làm lại
+          <i class="bi bi-arrow-clockwise"></i> Try Again
         </button>
       </div>
       <div class="context-content flex-grow-1 overflow-auto p-3 rounded">
@@ -115,7 +116,7 @@ watch(() => props.state.data, () => {
             </div>
           </div>
           <div v-if="!isChecked" class="d-grid mt-4">
-            <button @click="checkAnswers" class="btn btn-primary">Kiểm tra đáp án</button>
+            <button @click="checkAnswers" class="btn btn-primary">Check Answers</button>
           </div>
         </div>
       </div>
@@ -127,8 +128,10 @@ watch(() => props.state.data, () => {
 <style scoped>
 .context-panel {
   background-color: #2D3748;
-  /* Slate Gray */
-  border-radius: 0 15px 15px 0;
+  border-radius: 15px;
+  max-height: 570px;
+  min-height: 570px;
+  transition: transform 0.3s ease-in-out;
 }
 
 .text-secondary {
@@ -144,7 +147,7 @@ watch(() => props.state.data, () => {
   color: #4fd1c5 !important;
 }
 
-/* Style cho nội dung Markdown */
+/* Markdown Content Styles */
 .markdown-content {
   color: #F7FAFC;
   line-height: 1.7;
@@ -191,7 +194,7 @@ watch(() => props.state.data, () => {
   color: #81e6d9;
 }
 
-/* Style cho Quiz */
+/* Quiz Styles */
 .quiz-question {
   border-bottom: 1px solid #4A5568;
   padding-bottom: 1rem;

@@ -30,7 +30,6 @@ const handleDeleteClick = (event) => {
   <router-link :to="{ name: 'project-workspace', params: { id: project.id } }" class="project-card-link">
     <div class="card h-100 project-card">
       <div class="card-body d-flex flex-column">
-        <!-- *** CẬP NHẬT: Thêm nút xóa ở góc trên bên phải *** -->
         <button @click="handleDeleteClick" class="btn btn-sm btn-delete-card" title="Xóa dự án">
           <i class="bi bi-x-lg"></i>
         </button>

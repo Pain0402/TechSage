@@ -1,28 +1,26 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 
-// Import các Layouts và Views theo kiến trúc mới
-// Lưu ý: Các file này cần được tạo ở các bước tiếp theo
 import AppLayout from '@/layouts/AppLayout.vue'
-import AuthLayout from '@/layouts/AuthLayout.vue'
 import HomeView from '@/views/HomeView.vue' // Giờ là trang landing cho khách
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import ProjectWorkspaceView from '@/views/ProjectWorkspaceView.vue'
+import AuthenticationView from '@/views/AuthenticationView.vue' // Trang xác thực chung
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      component: AuthLayout, // Sử dụng layout cho các trang xác thực/công khai
+      path: '',
+      name: 'home',
+      component: HomeView, // Trang chủ/landing page
+    },
+    {
+      path: '/auth',
+      component: AuthenticationView, // Sử dụng layout cho các trang xác thực/công khai
       children: [
-        {
-          path: '',
-          name: 'home',
-          component: HomeView, // Trang chủ/landing page
-        },
         {
           path: 'login',
           name: 'login',
@@ -37,8 +35,8 @@ const router = createRouter({
     },
     {
       path: '/app',
-      component: AppLayout, // Sử dụng layout cho các trang cần đăng nhập
-      meta: { requiresAuth: true }, // Đánh dấu tất cả các route con đều cần xác thực
+      component: AppLayout,
+      meta: { requiresAuth: true },
       children: [
         {
           path: 'dashboard',

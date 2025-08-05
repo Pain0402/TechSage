@@ -93,4 +93,7 @@ export default {
   deleteDocument(documentId) {
     return apiClient.delete(`/documents/${documentId}`)
   },
+  getDocument(documentId) {
+    return apiClient.get(`/documents/${documentId}`)
+  },
 }

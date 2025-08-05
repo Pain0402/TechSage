@@ -1,9 +1,16 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
-import ProjectsView from './ProjectsView.vue';
 import AuthModal from '@/components/AuthModal.vue';
+import { useRouter } from 'vue-router';
+import { useToasts } from '@/composables/useToasts';
 
+const router = useRouter();
+const { addToast } = useToasts();
+const heroSection = ref(null);
+const featuresSection = ref(null);
+
+// eslint-disable-next-line no-unused-vars
 const authStore = useAuthStore();
 const isAuthModalVisible = ref(false);
 const authModalMode = ref('login'); // 'login' or 'register'
@@ -18,51 +25,148 @@ const closeAuthModal = () => {
 };
 
 const onAuthSuccess = () => {
-  // Có thể làm mới dữ liệu hoặc chuyển hướng tại đây
-  console.log("Xác thực thành công!");
+  // Sau khi xác thực thành công, Vue Router sẽ tự động chuyển hướng
+  // đến dashboard dựa trên logic trong router guard hoặc trong store.
+  console.log("Authentication successful! Redirecting...");
   closeAuthModal();
-}
+  addToast('Log in successfully!', 'success');
+  // Chuyển hướng đến trang Dashboard
+  router.push('/app/dashboard');
+};
+
+// Animation khi cuộn trang
+onMounted(() => {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('fade-in-visible');
+        }
+      });
+    },
+    {
+      threshold: 0.1,
+    }
+  );
+
+  if (heroSection.value) observer.observe(heroSection.value);
+  if (featuresSection.value) observer.observe(featuresSection.value);
+});
 </script>
 
 <template>
-  <!-- Đảm bảo font Inter được tải -->
+  <!-- Tải font chữ Inter -->
   <Teleport to="head">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </Teleport>
 
-  <!-- Lớp bọc chính với nền gradient tinh tế -->
-  <div class="page-wrapper">
-    <!-- Header với hiệu ứng Glassmorphism trên nền sáng -->
-    <header class="navbar">
-      <div class="navbar-brand">
-        <!-- Thay thế bằng URL logo của bạn -->
-        <img src="@/assets/techsage_logo.png" alt="TechSage Logo" class="logo-img bounce-top" />
-        <h1>TechSage</h1>
+  <div class="techsage-landing-page">
+    <!-- ===== Header ===== -->
+    <header class="navbar navbar-expand-lg navbar-dark fixed-top">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+          <!-- Thay thế bằng logo của bạn -->
+          <img src="@/assets/techsage_logo.png" alt="TechSage Logo" class="logo-img me-2" />
+          <span class="fw-bold">TechSage</span>
+        </a>
+        <div class="d-flex">
+          <button @click="showAuthModal('login')" class="btn btn-outline-light me-2">Login</button>
+          <button @click="showAuthModal('register')" class="btn btn-gradient">Get Started</button>
+        </div>
       </div>
-      <nav class="navbar-settings">
-        <div v-if="!authStore.isLoggedIn" class="auth-links">
-          <button @click="showAuthModal('login')" class="nav-button">Login</button>
-          <button @click="showAuthModal('register')" class="nav-button primary">Register</button>
-        </div>
-        <div v-else>
-          <!-- Nút Logout được tạo kiểu nhất quán -->
-          <button @click="authStore.logout" class="nav-button">Logout</button>
-        </div>
-      </nav>
     </header>
 
-    <!-- Nội dung chính -->
-    <main class="container">
-      <ProjectsView />
+    <!-- ===== Main Content ===== -->
+    <main>
+      <!-- Hero Section -->
+      <section ref="heroSection" class="hero-section text-center d-flex align-items-center">
+        <div class="container">
+          <div class="row justify-content-center">
+            <div class="col-lg-8">
+              <h1 class="display-4 fw-bolder text-white mb-3">
+                Unlock Knowledge from Your Documents
+              </h1>
+              <p class="lead text-secondary-light mb-4">
+                TechSage is your AI assistant that lets you chat with your PDFs and text files. Ask questions, get
+                summaries, and create quizzes instantly.
+              </p>
+              <button @click="showAuthModal('register')" class="btn btn-gradient btn-lg">
+                Start Your Free Project
+                <i class="bi bi-arrow-right-short"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section ref="featuresSection" class="features-section py-5">
+        <div class="container">
+          <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+              <h2 class="fw-bold text-white">A Smarter Way to Research and Learn</h2>
+              <p class="text-secondary-light">
+                Leverage the power of Retrieval-Augmented Generation (RAG) for accurate, context-aware answers.
+              </p>
+            </div>
+          </div>
+          <div class="row g-4">
+            <!-- Feature 1: Chat -->
+            <div class="col-md-4">
+              <div class="feature-card h-100">
+                <div class="feature-icon mb-3">
+                  <i class="bi bi-chat-dots-fill"></i>
+                </div>
+                <h5 class="fw-semibold text-white">Interactive Q&A</h5>
+                <p class="text-secondary-light small">
+                  Ask complex questions in natural language and get precise answers directly from your uploaded
+                  documents.
+                </p>
+              </div>
+            </div>
+            <!-- Feature 2: Summarize -->
+            <div class="col-md-4">
+              <div class="feature-card h-100">
+                <div class="feature-icon mb-3">
+                  <i class="bi bi-file-text-fill"></i>
+                </div>
+                <h5 class="fw-semibold text-white">Instant Summaries</h5>
+                <p class="text-secondary-light small">
+                  Generate concise summaries of long documents with a single click, saving you hours of reading.
+                </p>
+              </div>
+            </div>
+            <!-- Feature 3: Quiz Generation -->
+            <div class="col-md-4">
+              <div class="feature-card h-100">
+                <div class="feature-icon mb-3">
+                  <i class="bi bi-patch-question-fill"></i>
+                </div>
+                <h5 class="fw-semibold text-white">Automated Quizzes</h5>
+                <p class="text-secondary-light small">
+                  Create multiple-choice quizzes from your study materials to test your knowledge and reinforce
+                  learning.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
-    <!-- Nút hành động nổi (FAB) được thiết kế lại -->
-    <div class="fab-menu">
-      <button class="fab-button">+</button>
-    </div>
+    <!-- ===== Footer ===== -->
+    <footer class="py-4 text-center">
+      <div class="container">
+        <p class="text-secondary-light small mb-0">
+          &copy; {{ new Date().getFullYear() }} TechSage. All Rights Reserved.
+        </p>
+      </div>
+    </footer>
   </div>
 
+  <!-- Auth Modal -->
   <Teleport to="body">
     <AuthModal v-if="isAuthModalVisible" :initial-mode="authModalMode" @close="closeAuthModal"
       @authSuccess="onAuthSuccess" />
@@ -70,314 +174,124 @@ const onAuthSuccess = () => {
 </template>
 
 <style scoped>
-/* Thiết lập font chữ và nền cơ bản */
-.page-wrapper {
+/* ===== General Styling & Dark Theme ===== */
+.techsage-landing-page {
   font-family: 'Inter', sans-serif;
-  background-color: #f4f7f6;
-  /* Thêm các dải màu gradient nhẹ ở góc để tạo chiều sâu */
-  background-image:
-    radial-gradient(at 0% 0%, hsla(148, 70%, 85%, 0.4) 0px, transparent 50%),
-    radial-gradient(at 98% 99%, hsla(170, 70%, 80%, 0.4) 0px, transparent 50%);
-  min-height: 100vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  background-color: #1A202C;
+  /* Dark Charcoal */
+  color: #F7FAFC;
+  /* Off-White */
+  overflow-x: hidden;
 }
 
-/* Header (Navbar) với hiệu ứng Liquid Glass trên nền sáng */
+.text-secondary-light {
+  color: #A0AEC0;
+  /* Light Slate */
+}
+
+/* ===== Navbar ===== */
 .navbar {
-  position: sticky;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  padding: 1rem 10rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 10;
-  border-radius: 12px;
-  /* Bo tròn các góc */
-
-  /* Hiệu ứng Glassmorphism */
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
-  border: 1px solid rgba(31, 41, 55, 0.1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
-}
-
-.navbar-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  background: rgba(26, 32, 44, 0.8);
+  /* Dark Charcoal with transparency */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid #2D3748;
+  /* Slate Gray border */
 }
 
 .logo-img {
-  height: 36px;
-  width: 36px;
+  height: 32px;
+  width: 32px;
   object-fit: contain;
 }
 
-.navbar-brand h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  /* Màu văn bản tối để dễ đọc trên nền sáng */
-  letter-spacing: -0.02em;
-  margin: 0;
+.navbar-brand span {
+  font-size: 1.25rem;
 }
 
-/* Các nút điều hướng */
-.navbar-settings .auth-links {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.nav-button {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #4b5563;
-  /* Màu văn bản phụ */
-  background: transparent;
+/* ===== Gradient Button ===== */
+.btn-gradient {
+  background-image: linear-gradient(to right, #4fd1c5, #81e6d9);
   border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  text-decoration: none;
+  color: #1A202C;
+  /* Dark text on light gradient */
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(129, 230, 217, 0.1);
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(129, 230, 217, 0.2);
+  color: #1A202C;
+}
+
+.btn-outline-light {
   transition: all 0.3s ease;
 }
 
-.nav-button:hover {
-  background: rgba(31, 41, 55, 0.05);
-  color: #1f2937;
+.btn-outline-light:hover {
+  background-color: #F7FAFC;
+  color: #1A202C;
 }
 
-.nav-button.primary {
-  background-color: #34d399;
-  border-color: #34d399;
-  color: #ffffff;
-  font-weight: 600;
+
+/* ===== Hero Section ===== */
+.hero-section {
+  min-height: 100vh;
+  padding-top: 100px;
+  /* Offset for fixed navbar */
+  background-image:
+    radial-gradient(at 15% 20%, hsla(175, 70%, 50%, 0.15) 0px, transparent 50%),
+    radial-gradient(at 85% 80%, hsla(195, 70%, 55%, 0.1) 0px, transparent 50%);
 }
 
-.nav-button.primary:hover {
-  background-color: #2bb989;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(52, 211, 153, 0.25);
+/* ===== Features Section ===== */
+.features-section {
+  background-color: #161b25;
+  /* Slightly different dark shade for contrast */
+  border-top: 1px solid #2D3748;
+  border-bottom: 1px solid #2D3748;
 }
 
-.bounce-top {
-  -webkit-animation: bounce-top 0.9s both;
-  animation: bounce-top 0.9s both;
+.feature-card {
+  background-color: #2D3748;
+  /* Slate Gray */
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  transform: translateY(0);
 }
 
-/* ----------------------------------------------
- * Generated by Animista on 2025-7-13 23:4:42
- * Licensed under FreeBSD License.
- * See http://animista.net/license for more info. 
- * w: http://animista.net, t: @cssanimista
- * ---------------------------------------------- */
-
-/**
- * ----------------------------------------
- * animation bounce-top
- * ----------------------------------------
- */
-@-webkit-keyframes bounce-top {
-  0% {
-    -webkit-transform: translateY(-45px);
-    transform: translateY(-45px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-    opacity: 1;
-  }
-
-  24% {
-    opacity: 1;
-  }
-
-  40% {
-    -webkit-transform: translateY(-24px);
-    transform: translateY(-24px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-  }
-
-  65% {
-    -webkit-transform: translateY(-12px);
-    transform: translateY(-12px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-  }
-
-  82% {
-    -webkit-transform: translateY(-6px);
-    transform: translateY(-6px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-  }
-
-  93% {
-    -webkit-transform: translateY(-4px);
-    transform: translateY(-4px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-  }
-
-  25%,
-  55%,
-  75%,
-  87% {
-    -webkit-transform: translateY(0px);
-    transform: translateY(0px);
-    -webkit-animation-timing-function: ease-out;
-    animation-timing-function: ease-out;
-  }
-
-  100% {
-    -webkit-transform: translateY(0px);
-    transform: translateY(0px);
-    -webkit-animation-timing-function: ease-out;
-    animation-timing-function: ease-out;
-    opacity: 1;
-  }
+.feature-card:hover {
+  transform: translateY(-8px);
+  border-color: #4fd1c5;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes bounce-top {
-  0% {
-    -webkit-transform: translateY(-45px);
-    transform: translateY(-45px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-    opacity: 1;
-  }
-
-  24% {
-    opacity: 1;
-  }
-
-  40% {
-    -webkit-transform: translateY(-24px);
-    transform: translateY(-24px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-  }
-
-  65% {
-    -webkit-transform: translateY(-12px);
-    transform: translateY(-12px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-  }
-
-  82% {
-    -webkit-transform: translateY(-6px);
-    transform: translateY(-6px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-  }
-
-  93% {
-    -webkit-transform: translateY(-4px);
-    transform: translateY(-4px);
-    -webkit-animation-timing-function: ease-in;
-    animation-timing-function: ease-in;
-  }
-
-  25%,
-  55%,
-  75%,
-  87% {
-    -webkit-transform: translateY(0px);
-    transform: translateY(0px);
-    -webkit-animation-timing-function: ease-out;
-    animation-timing-function: ease-out;
-  }
-
-  100% {
-    -webkit-transform: translateY(0px);
-    transform: translateY(0px);
-    -webkit-animation-timing-function: ease-out;
-    animation-timing-function: ease-out;
-    opacity: 1;
-  }
+.feature-icon {
+  font-size: 2.5rem;
+  background: -webkit-linear-gradient(#4fd1c5, #81e6d9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Container nội dung chính */
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 5%;
-  box-sizing: border-box;
-  flex-grow: 1;
-  z-index: 5;
+/* ===== Animations ===== */
+.hero-section,
+.features-section {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
 }
 
-/* Nút hành động nổi (FAB) */
-.fab-menu {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 999;
+.fade-in-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.fab-button {
-  background: linear-gradient(45deg, #34d399, #2dd4bf);
-  color: #ffffff;
-  border: none;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  font-size: 2rem;
-  font-weight: 400;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  box-shadow: 0 8px 25px rgba(52, 211, 153, 0.3);
-  transition: all 0.3s ease-in-out;
-}
-
-.fab-button:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 12px 30px rgba(45, 212, 191, 0.4);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .navbar {
-    width: 95%;
-    padding: 0.75rem 1rem;
-    top: 10px;
-  }
-
-  .navbar-brand h1 {
-    font-size: 1.25rem;
-  }
-
-  .nav-button {
-    padding: 6px 10px;
-    font-size: 0.9rem;
-  }
-
-  .fab-menu {
-    bottom: 1.5rem;
-    right: 1.5rem;
-  }
-
-  .fab-button {
-    width: 54px;
-    height: 54px;
-    font-size: 1.8rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .navbar-brand h1 {
-    display: none;
-    /* Ẩn chữ trên màn hình nhỏ, chỉ giữ lại logo */
-  }
+/* ===== Footer ===== */
+footer {
+  background-color: #161b25;
 }
 </style>

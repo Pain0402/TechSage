@@ -87,3 +87,24 @@ exports.deleteDocument = async (req, res) => {
       .json({ message: error.message || "Lỗi máy chủ nội bộ" });
   }
 };
+
+exports.getDocumentById = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { documentId } = req.params;
+  const userId = req.user.userId;
+
+  try {
+    const document = await documentService.getDocumentById(documentId, userId);
+    res.status(200).json(document);
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin tài liệu:", error);
+    const statusCode = error.statusCode || 500;
+    res
+      .status(statusCode)
+      .json({ message: error.message || "Lỗi máy chủ nội bộ" });
+  }
+};

@@ -1,25 +1,53 @@
 <script setup>
+// Vue
 import { ref, watch } from 'vue';
 
+// --- Props & Emits ---
 const props = defineProps({
   show: Boolean,
-  title: { type: String, default: 'Xác nhận hành động' },
-  message: { type: String, default: 'Bạn có chắc chắn muốn thực hiện hành động này không?' },
-  confirmText: { type: String, default: 'Xác nhận' },
-  cancelText: { type: String, default: 'Hủy' },
-  variant: { type: String, default: 'danger' }, // 'danger', 'warning', 'info'
+  title: {
+    type: String,
+    default: 'Confirm Action'
+  },
+  message: {
+    type: String,
+    default: 'Are you sure you want to perform this action?'
+  },
+  confirmText: {
+    type: String,
+    default: 'Confirm'
+  },
+  cancelText: {
+    type: String,
+    default: 'Cancel'
+  },
+  variant: {
+    type: String,
+    default: 'danger'
+  }, // 'danger', 'warning', 'info'
 });
 
 const emit = defineEmits(['close', 'confirm']);
 
+// --- Component State ---
 const modalInstance = ref(null);
 
+// --- Methods ---
+const handleConfirm = () => {
+  emit('confirm');
+};
+
+// --- Watchers ---
+// Manages the Bootstrap modal instance based on the `show` prop
 watch(() => props.show, (newVal) => {
+  const modalEl = document.getElementById('confirmationModal');
+  if (!modalEl) return;
+
   if (newVal) {
-    const modalEl = document.getElementById('confirmationModal');
     // eslint-disable-next-line no-undef
     modalInstance.value = new bootstrap.Modal(modalEl);
     modalInstance.value.show();
+    // Sync state if the user closes the modal via backdrop click or Esc key
     modalEl.addEventListener('hidden.bs.modal', () => emit('close'), { once: true });
   } else {
     if (modalInstance.value) {
@@ -27,10 +55,6 @@ watch(() => props.show, (newVal) => {
     }
   }
 });
-
-const handleConfirm = () => {
-  emit('confirm');
-};
 </script>
 
 <template>

@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
+import AuthLayout from '@/layouts/AuthLayout.vue'; // Import layout mới
 
 // --- State ---
 const email = ref('');
@@ -26,13 +27,10 @@ const handleLogin = async () => {
 
   try {
     await authStore.login({ email: email.value, password: password.value });
-
-    // Chuyển hướng về trang họ muốn truy cập ban đầu, hoặc về dashboard
-    const redirectPath = route.query.redirect || '/app/dashboard';
+    const redirectPath = route.query.redirect || '/'; // Chuyển về trang chủ hoặc trang được yêu cầu
     router.push(redirectPath);
-
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.';
+    errorMessage.value = error.response?.data?.message || 'Email hoặc mật khẩu không chính xác.';
   } finally {
     isLoading.value = false;
   }
@@ -40,130 +38,117 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="row justify-content-center">
-    <div class="col-11 col-sm-8 col-md-6 col-lg-5 col-xl-4">
-      <div class="login-card">
-        <!-- Logo -->
-        <div class="text-center mb-4">
-          <img src="@/assets/techsage_logo.png" alt="TechSage Logo" class="logo-img mb-3" />
-          <h1 class="h3 mb-0 fw-bold">Chào mừng trở lại</h1>
-          <p class="text-secondary">Đăng nhập để tiếp tục với TechSage</p>
-        </div>
-
-        <!-- Form Đăng nhập -->
-        <form @submit.prevent="handleLogin">
-          <!-- Thông báo lỗi -->
-          <div v-if="errorMessage" class="alert alert-danger p-2 text-center" role="alert">
-            {{ errorMessage }}
-          </div>
-
-          <!-- Email -->
-          <div class="form-floating mb-3">
-            <input type="email" class="form-control" id="emailInput" placeholder="name@example.com" v-model="email"
-              required>
-            <label for="emailInput">Địa chỉ email</label>
-          </div>
-
-          <!-- Mật khẩu -->
-          <div class="form-floating mb-3">
-            <input type="password" class="form-control" id="passwordInput" placeholder="Password" v-model="password"
-              required>
-            <label for="passwordInput">Mật khẩu</label>
-          </div>
-
-          <!-- Quên mật khẩu -->
-          <div class="d-flex justify-content-end mb-4">
-            <a href="#" class="link-secondary small">Quên mật khẩu?</a>
-          </div>
-
-          <!-- Nút Đăng nhập -->
-          <div class="d-grid">
-            <button class="btn btn-primary btn-lg fw-semibold" type="submit" :disabled="isLoading">
-              <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-              <span v-else>Đăng nhập</span>
-            </button>
-          </div>
-        </form>
-
-        <!-- Link sang trang Đăng ký -->
-        <p class="text-center text-secondary mt-4 mb-0">
-          Chưa có tài khoản?
-          <router-link :to="{ name: 'register' }" class="fw-medium link-primary">Đăng ký ngay</router-link>
-        </p>
-      </div>
+  <AuthLayout>
+    <div class="text-center mb-4">
+      <h1 class="h3 mb-1 fw-bold text-white">Welcome Back</h1>
+      <p class="text-secondary-light">Login to continue with TechSage</p>
     </div>
-  </div>
+
+    <!-- Form Đăng nhập -->
+    <form @submit.prevent="handleLogin" class="needs-validation" novalidate>
+      <!-- Thông báo lỗi -->
+      <div v-if="errorMessage" class="alert alert-danger p-2 text-center small" role="alert">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Email -->
+      <div class="form-floating mb-3">
+        <input type="email" class="form-control" id="emailInput" placeholder="name@example.com" v-model="email"
+          required>
+        <label for="emailInput">Email Address</label>
+      </div>
+
+      <!-- Mật khẩu -->
+      <div class="form-floating mb-3">
+        <input type="password" class="form-control" id="passwordInput" placeholder="Password" v-model="password"
+          required>
+        <label for="passwordInput">Password</label>
+      </div>
+
+      <!-- Quên mật khẩu -->
+      <div class="d-flex justify-content-end mb-4">
+        <a href="#" class="link-secondary small">Forgot Password?</a>
+      </div>
+
+      <!-- Nút Đăng nhập -->
+      <div class="d-grid">
+        <button class="btn btn-gradient fw-semibold" type="submit" :disabled="isLoading">
+          <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <span v-else>Login</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- Link sang trang Đăng ký -->
+    <p class="text-center text-secondary-light mt-4 mb-0 small">
+      Don't have an account?
+      <router-link :to="{ name: 'register' }" class="fw-medium link-gradient">Sign up now</router-link>
+    </p>
+  </AuthLayout>
 </template>
 
 <style scoped>
-/* Tùy chỉnh Bootstrap cho phù hợp với theme */
-.login-card {
-  background-color: #2D3748;
-  /* Màu nền cho khối nội dung - Slate Gray */
-  color: #F7FAFC;
-  /* Màu văn bản chính - Off-White */
-  padding: 2.5rem;
-  border-radius: 1rem;
-  border: 1px solid #4A5568;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.logo-img {
-  width: 60px;
-  height: 60px;
-}
-
+/* ===== Form Styling ===== */
 .form-control {
   background-color: #1A202C;
   border-color: #4A5568;
   color: #F7FAFC;
+  border-radius: 0.5rem;
 }
 
 .form-control:focus {
   background-color: #1A202C;
   border-color: #4fd1c5;
-  /* Màu nhấn */
+  /* Primary Gradient Color */
   box-shadow: 0 0 0 0.25rem rgba(79, 209, 197, 0.25);
   color: #F7FAFC;
 }
 
 .form-floating>label {
   color: #A0AEC0;
-  /* Màu văn bản phụ */
+  /* Secondary Text Color */
 }
 
-.btn-primary {
-  --bs-btn-bg: #4fd1c5;
-  --bs-btn-border-color: #4fd1c5;
-  --bs-btn-hover-bg: #38b2ac;
-  --bs-btn-hover-border-color: #38b2ac;
-  /* Tạo hiệu ứng gradient cho nút */
+.form-floating>.form-control:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px #1A202C inset !important;
+  -webkit-text-fill-color: #F7FAFC !important;
+}
+
+/* ===== Button & Links ===== */
+.btn-gradient {
   background-image: linear-gradient(to right, #4fd1c5, #81e6d9);
   border: none;
+  color: #1A202C;
+  padding: 0.75rem;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(129, 230, 217, 0.1);
 }
 
-.btn-primary:hover {
+.btn-gradient:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(79, 209, 197, 0.2);
+  box-shadow: 0 6px 20px rgba(129, 230, 217, 0.2);
+  color: #1A202C;
 }
 
-.link-primary {
-  color: #81e6d9 !important;
+.link-gradient {
+  background: -webkit-linear-gradient(#4fd1c5, #81e6d9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-decoration: none;
-}
-
-.link-primary:hover {
-  color: #4fd1c5 !important;
-  text-decoration: underline;
+  font-weight: 600;
 }
 
 .link-secondary {
   color: #A0AEC0 !important;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 .link-secondary:hover {
   color: #F7FAFC !important;
+}
+
+.text-secondary-light {
+  color: #A0AEC0;
 }
 </style>

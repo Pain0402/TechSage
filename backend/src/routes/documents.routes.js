@@ -59,4 +59,16 @@ router.delete(
   documentsController.deleteDocument
 );
 
+/**
+ * @route   GET /api/documents/:documentId
+ * @desc    Lấy thông tin chi tiết một tài liệu
+ * @access  Private
+ */
+router.get(
+  "/:documentId",
+  protect,
+  [check("documentId", "ID tài liệu không hợp lệ.").isUUID()],
+  documentsController.getDocumentById
+);
+
 module.exports = router;

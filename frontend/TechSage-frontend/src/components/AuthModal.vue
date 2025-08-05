@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 
 // --- Props & Emits ---
@@ -14,7 +14,7 @@ const emit = defineEmits(['close', 'authSuccess']);
 
 // --- State Management ---
 const authStore = useAuthStore();
-const currentMode = ref(props.initialMode); // 'login' or 'register'
+const currentMode = ref(props.initialMode);
 const isLoading = ref(false);
 const errorMessage = ref('');
 
@@ -25,8 +25,6 @@ const confirmPassword = ref('');
 
 // --- Computed Properties ---
 const isLoginMode = computed(() => currentMode.value === 'login');
-const modalTitle = computed(() => isLoginMode.value ? 'Đăng nhập' : 'Tạo tài khoản');
-const submitButtonText = computed(() => isLoginMode.value ? 'Đăng nhập' : 'Đăng ký');
 
 // --- Functions ---
 const closeModal = () => {
@@ -37,7 +35,7 @@ const closeModal = () => {
 
 const switchMode = () => {
   currentMode.value = isLoginMode.value ? 'register' : 'login';
-  errorMessage.value = ''; // Reset lỗi khi chuyển mode
+  errorMessage.value = ''; // Reset error when switching modes
 };
 
 const handleSubmit = async () => {
@@ -46,91 +44,113 @@ const handleSubmit = async () => {
   errorMessage.value = '';
   try {
     if (isLoginMode.value) {
-      // Logic đăng nhập
       await authStore.login({ email: email.value, password: password.value });
     } else {
-      // Logic đăng ký
       if (password.value !== confirmPassword.value) {
-        throw new Error('Mật khẩu xác nhận không khớp.');
+        throw new Error('Password confirmation does not match.');
+      }
+      if (password.value.length < 6) {
+        throw new Error('Password must be at least 6 characters.');
       }
       await authStore.register({ email: email.value, password: password.value });
     }
     emit('authSuccess');
     closeModal();
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra.';
+    errorMessage.value = error.response?.data?.message || error.message || 'An error occurred.';
   } finally {
     isLoading.value = false;
   }
 };
+
+// Handle Escape key to close modal
+const handleKeydown = (e) => {
+  if (e.key === 'Escape') {
+    closeModal();
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown);
+});
 </script>
 
 <template>
   <div class="modal-overlay" @mousedown.self="closeModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>{{ modalTitle }}</h3>
-        <button @click="closeModal" class="close-btn" title="Đóng"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <div class="modal-body">
-        <form @submit.prevent="handleSubmit">
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input id="email" v-model="email" type="email" placeholder="you@example.com" required>
-          </div>
-          <div class="form-group">
-            <label for="password">Mật khẩu</label>
-            <input id="password" v-model="password" type="password" placeholder="••••••••" required>
-          </div>
-          <div v-if="!isLoginMode" class="form-group">
-            <label for="confirmPassword">Xác nhận mật khẩu</label>
-            <input id="confirmPassword" v-model="confirmPassword" type="password" placeholder="••••••••" required>
-          </div>
+    <div class="auth-card">
+      <button @click="closeModal" class="close-btn" title="Close (Esc)">
+        <i class="bi bi-x-lg"></i>
+      </button>
 
-          <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-
-          <button type="submit" class="submit-btn" :disabled="isLoading">
-            <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status"></span>
-            <span v-else>{{ submitButtonText }}</span>
-          </button>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <p>
-          {{ isLoginMode ? 'Chưa có tài khoản?' : 'Đã có tài khoản?' }}
-          <button @click="switchMode" class="switch-mode-btn">
-            {{ isLoginMode ? 'Đăng ký ngay' : 'Đăng nhập' }}
-          </button>
+      <!-- Title -->
+      <div class="text-center mb-4">
+        <h1 class="h3 mb-1 fw-bold text-white">
+          {{ isLoginMode ? 'Welcome Back' : 'Create Account' }}
+        </h1>
+        <p class="text-secondary-light small">
+          {{ isLoginMode ? 'Login to continue' : 'Start your journey' }}
         </p>
       </div>
+
+      <!-- Form -->
+      <form @submit.prevent="handleSubmit" novalidate>
+        <div v-if="errorMessage" class="alert alert-danger p-2 text-center small mb-3" role="alert">
+          {{ errorMessage }}
+        </div>
+
+        <!-- Fields -->
+        <div class="form-floating mb-3">
+          <input type="email" class="form-control" id="modalEmailInput" placeholder="name@example.com" v-model="email"
+            required>
+          <label for="modalEmailInput">Email Address</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="password" class="form-control" id="modalPasswordInput" placeholder="Password" v-model="password"
+            required>
+          <label for="modalPasswordInput">Password</label>
+        </div>
+        <div v-if="!isLoginMode" class="form-floating mb-3">
+          <input type="password" class="form-control" id="modalConfirmPasswordInput" placeholder="Confirm Password"
+            v-model="confirmPassword" required>
+          <label for="modalConfirmPasswordInput">Confirm Password</label>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="d-grid mt-4">
+          <button class="btn btn-gradient fw-semibold" type="submit" :disabled="isLoading">
+            <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span v-else>{{ isLoginMode ? 'Login' : 'Create Account' }}</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Toggle Mode Link -->
+      <p class="text-center text-secondary-light mt-4 mb-0 small">
+        <span v-if="isLoginMode">Don't have an account? </span>
+        <span v-else>Already have an account? </span>
+        <a href="#" @click.prevent="switchMode" class="fw-medium link-gradient">
+          {{ isLoginMode ? 'Sign up' : 'Log in' }}
+        </a>
+      </p>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Import Bootstrap Icons */
-@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css");
-
-/* Kế thừa biến màu từ các component trước */
-:root {
-  --c-primary: #34d399;
-  --c-primary-hover: #2bb989;
-  --c-text-primary: #1f2937;
-  --c-text-secondary: #4b5563;
-  --c-border: rgba(31, 41, 55, 0.1);
-  --c-error: #ef4444;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-}
-
+/* ===== Modal Overlay & Card ===== */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(31, 41, 55, 0.5);
+  background-color: rgba(26, 32, 44, 0.7);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -138,6 +158,37 @@ const handleSubmit = async () => {
   animation: fadeIn 0.3s ease;
 }
 
+.auth-card {
+  position: relative;
+  background-color: #2D3748;
+  padding: 2.5rem;
+  border-radius: 1rem;
+  border: 1px solid #4A5568;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 420px;
+  animation: slideIn 0.4s ease-out;
+}
+
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #A0AEC0;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+  color: #F7FAFC;
+}
+
+/* ===== Animations ===== */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -148,19 +199,9 @@ const handleSubmit = async () => {
   }
 }
 
-.modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--radius-md);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  width: 90%;
-  max-width: 420px;
-  animation: slideIn 0.4s ease-out;
-}
-
 @keyframes slideIn {
   from {
-    transform: translateY(-30px);
+    transform: translateY(-20px);
     opacity: 0;
   }
 
@@ -170,102 +211,58 @@ const handleSubmit = async () => {
   }
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+/* ===== Shared and Consistent Styles ===== */
+.text-secondary-light {
+  color: #A0AEC0;
 }
 
-.modal-header h3 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--c-text-primary);
-  margin: 0;
+.form-control {
+  background-color: #1A202C;
+  border-color: #4A5568;
+  color: #F7FAFC;
+  border-radius: 0.5rem;
 }
 
-.close-btn {
-  background: none;
+.form-control:focus {
+  background-color: #1A202C;
+  border-color: #4fd1c5;
+  box-shadow: 0 0 0 0.25rem rgba(79, 209, 197, 0.25);
+  color: #F7FAFC;
+}
+
+.form-floating>label {
+  color: #A0AEC0;
+}
+
+.form-floating>.form-control:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px #1A202C inset !important;
+  -webkit-text-fill-color: #F7FAFC !important;
+}
+
+.btn-gradient {
+  background-image: linear-gradient(to right, #4fd1c5, #81e6d9);
   border: none;
-  font-size: 1.25rem;
-  color: var(--c-text-secondary);
-  cursor: pointer;
-  padding: 0.5rem;
-  line-height: 1;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: var(--c-text-primary);
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.875rem 1rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--c-border);
-  font-size: 1rem;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: var(--c-primary);
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
-}
-
-.error-message {
-  color: var(--c-error);
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.submit-btn {
-  width: 100%;
-  padding: 1rem;
-  border-radius: var(--radius-sm);
-  border: none;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  background-color: var(--c-primary);
-  color: white;
+  color: #1A202C;
+  padding: 0.75rem;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(129, 230, 217, 0.1);
 }
 
-.submit-btn:hover:not(:disabled) {
-  background-color: var(--c-primary-hover);
+.btn-gradient:hover:not(:disabled) {
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(129, 230, 217, 0.2);
+  color: #1A202C;
 }
 
-.submit-btn:disabled {
-  opacity: 0.7;
+.btn-gradient:disabled {
   cursor: not-allowed;
 }
 
-.modal-footer {
-  text-align: center;
-  margin-top: 2rem;
-  color: var(--c-text-secondary);
-}
-
-.switch-mode-btn {
-  background: none;
-  border: none;
-  color: var(--c-primary);
+.link-gradient {
+  background: -webkit-linear-gradient(#4fd1c5, #81e6d9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-decoration: none;
   font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-
-.switch-mode-btn:hover {
-  text-decoration: underline;
 }
 </style>
