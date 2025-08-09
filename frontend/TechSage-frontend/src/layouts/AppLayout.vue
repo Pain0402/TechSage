@@ -1,7 +1,3 @@
-<script setup>
-import ToastContainer from '@/components/base/ToastContainer.vue';
-</script>
-
 <template>
   <div class="app-layout">
     <div class="main-content d-flex flex-column">
@@ -14,7 +10,7 @@ import ToastContainer from '@/components/base/ToastContainer.vue';
       </main>
     </div>
 
-    <ToastContainer />
+
   </div>
 </template>
 

@@ -25,14 +25,19 @@ const closeAuthModal = () => {
 };
 
 const onAuthSuccess = () => {
-  // Sau khi xác thực thành công, Vue Router sẽ tự động chuyển hướng
-  // đến dashboard dựa trên logic trong router guard hoặc trong store.
-  console.log("Authentication successful! Redirecting...");
   closeAuthModal();
-  addToast('Log in successfully!', 'success');
-  // Chuyển hướng đến trang Dashboard
-  router.push('/app/dashboard');
+  // Check if the recent action was 'login' or 'register'
+  if (authModalMode.value === 'login') {
+    // If it's login, navigate to the dashboard
+    addToast('Login successful!', 'success');
+    router.push('/app/dashboard');
+  } else {
+    // If it's register, just show a notification and stay on the homepage
+    addToast('Registration successful! Please log in to continue.', 'success');
+    // No need for router.push() because we want to stay on the homepage
+  }
 };
+
 
 // Animation khi cuộn trang
 onMounted(() => {
