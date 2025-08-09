@@ -26,15 +26,11 @@ const closeAuthModal = () => {
 
 const onAuthSuccess = () => {
   closeAuthModal();
-  // Check if the recent action was 'login' or 'register'
   if (authModalMode.value === 'login') {
-    // If it's login, navigate to the dashboard
     addToast('Login successful!', 'success');
     router.push('/app/dashboard');
   } else {
-    // If it's register, just show a notification and stay on the homepage
     addToast('Registration successful! Please log in to continue.', 'success');
-    // No need for router.push() because we want to stay on the homepage
   }
 };
 
