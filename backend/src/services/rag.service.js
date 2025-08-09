@@ -75,9 +75,6 @@ const processAndEmbedDocument = async (
   console.log(`Bắt đầu thêm ${splitDocs.length} chunks vào vector store...`);
   await pgvectorStore.addDocuments(splitDocs);
 
-  // *** TỐI ƯU: Loại bỏ việc cập nhật trạng thái ở đây. ***
-  // Service `document.service.js` sẽ chịu trách nhiệm cho việc này.
-
   console.log(`Xử lý và nhúng file thành công cho document ID: ${documentId}`);
 };
 

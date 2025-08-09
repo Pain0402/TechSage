@@ -10,7 +10,7 @@ router.get("/", protect, projectsController.getProjectsForUser);
 // POST /api/projects - Tạo một dự án mới
 router.post(
   "/",
-  protect, // *** BẢO VỆ ROUTE ***
+  protect,
   [
     body("name", "Tên dự án không được để trống.")
       .not()
@@ -49,7 +49,7 @@ router.get(
 // POST /api/projects/query - Hỏi đáp với một dự án
 router.post(
   "/query", // Thay đổi route để không bị xung đột
-  protect, // *** BẢO VỆ ROUTE ***
+  protect,
   [
     body("projectId", "ID dự án không hợp lệ.").isUUID(),
     body("question", "Câu hỏi không được để trống.").not().isEmpty().trim(),

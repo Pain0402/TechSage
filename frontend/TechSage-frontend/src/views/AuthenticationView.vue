@@ -44,7 +44,10 @@ const handleSubmit = async () => {
       }
       await authStore.register({ email: email.value, password: password.value });
       // Đăng ký thành công, chuyển sang mode login và thông báo
-      mode.value = 'login';
+      // mode.value = 'login';
+      router.push({ name: 'home' });
+      console.log('Registration successful! Redirecting to login...');
+
       // Có thể thêm một thông báo thành công ở đây
     }
   } catch (error) {

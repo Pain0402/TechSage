@@ -3,12 +3,12 @@ const router = express.Router();
 const multer = require("multer");
 const { check } = require("express-validator");
 const documentsController = require("../controllers/documents.controller");
-const { protect } = require("../middleware/auth.middleware"); // Sử dụng middleware đã tạo
+const { protect } = require("../middleware/auth.middleware");
 
-// Cấu hình Multer để kiểm soát tốt hơn
+// Cấu hình Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Đảm bảo thư mục 'uploads' đã tồn tại
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
     // Tạo tên file duy nhất để tránh ghi đè
@@ -26,8 +26,8 @@ const upload = multer({ storage: storage });
  */
 router.post(
   "/upload",
-  protect, // *** BẮT BUỘC: Bảo vệ route này
-  upload.single("documentFile"), // Middleware của Multer xử lý file
+  protect,
+  upload.single("documentFile"),
   [
     // Validation
     check("projectId", "Cần có ID của dự án.").not().isEmpty().isUUID(),

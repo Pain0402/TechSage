@@ -31,8 +31,7 @@ const handleRegister = async () => {
   isLoading.value = true;
   try {
     await authStore.register({ email: email.value, password: password.value });
-    // Sau khi đăng ký thành công, chuyển hướng đến trang đăng nhập để người dùng login
-    router.push({ name: 'login', query: { registered: 'true' } });
+    router.push({ name: 'home' });
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Email đã tồn tại hoặc có lỗi xảy ra.';
   } finally {

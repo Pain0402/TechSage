@@ -45,7 +45,7 @@ const handleLogout = () => {
   addToast('Logged out Successfully.', 'success');
   setTimeout(() => {
     authStore.logout();
-  }, 800);
+  }, 700);
 }
 
 const openDeleteModal = (project) => {
