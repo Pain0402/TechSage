@@ -62,28 +62,28 @@ watch(() => props.show, (newVal) => {
     <div class="modal-dialog modal-dialog-centered">
       <form @submit.prevent="handleSubmit" class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="projectModalLabel">Tạo dự án mới</h5>
+          <h5 class="modal-title" id="projectModalLabel">Create a new project</h5>
           <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div v-if="errorMessage" class="alert alert-danger p-2 text-center">{{ errorMessage }}</div>
 
           <div class="mb-3">
-            <label for="projectName" class="form-label">Tên dự án</label>
+            <label for="projectName" class="form-label">Project name</label>
             <input type="text" class="form-control" id="projectName" v-model="name" required>
           </div>
 
           <div class="mb-3">
-            <label for="projectDescription" class="form-label">Mô tả (Tùy chọn)</label>
+            <label for="projectDescription" class="form-label">Description (Optional)</label>
             <textarea class="form-control" id="projectDescription" rows="3" v-model="description"></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal" :disabled="isLoading">Hủy</button>
+          <button type="button" class="btn btn-secondary" @click="closeModal" :disabled="isLoading">Cancel</button>
           <button type="submit" class="btn btn-primary" :disabled="isLoading">
             <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
               aria-hidden="true"></span>
-            Tạo dự án
+            Create Project
           </button>
         </div>
       </form>

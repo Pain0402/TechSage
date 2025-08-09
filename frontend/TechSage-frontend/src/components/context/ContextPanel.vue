@@ -80,7 +80,7 @@ watch(() => props.state.data, () => {
       </p>
     </div>
 
-    <div v-else-if="state.view === 'summary'" class="d-flex flex-column h-100">
+    <div v-else-if="state.view === 'summary'" class="d-flex flex-column h-100 overflow-auto">
       <h5 class="fw-bold text-white mb-3">Document Summary</h5>
       <div class="context-content flex-grow-1 overflow-auto p-3 rounded">
         <div v-if="state.isLoading" class="d-flex justify-content-center align-items-center h-100">
